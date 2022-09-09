@@ -18,6 +18,7 @@ using Microsoft.eShopWeb.Web.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
+//test
 
 builder.Logging.AddConsole();
 

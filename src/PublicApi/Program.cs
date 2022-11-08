@@ -82,6 +82,7 @@ builder.Services.AddCors(options =>
                       });
 });
 
+builder.Services.AddApplicationInsightsTelemetry();
 builder.Services.AddControllers();
 
 builder.Services.AddMediatR(typeof(CatalogItem).Assembly);
@@ -135,6 +136,7 @@ using (var scope = app.Services.CreateScope())
     var scopedProvider = scope.ServiceProvider;
     try
     {
+        //throw new Exception("Cannot move further");
         var catalogContext = scopedProvider.GetRequiredService<CatalogContext>();
         await CatalogContextSeed.SeedAsync(catalogContext, app.Logger);
 

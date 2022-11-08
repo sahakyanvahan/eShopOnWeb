@@ -1,4 +1,6 @@
 ﻿using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
 using Microsoft.eShopWeb.ApplicationCore.Entities;
@@ -49,5 +51,18 @@ public class OrderService : IOrderService
         var order = new Order(basket.BuyerId, shippingAddress, items);
 
         await _orderRepository.AddAsync(order);
+        await ReserveOrder(order);
+    }
+
+    private async Task ReserveOrder(Order order)
+    {
+        var reqeustBody = JsonSerializer.Serialize(order);
+        var client = new HttpClient();
+
+        var reserverFunctionConnection = "https://orderitemreserver.azurewebsites.net";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, reserverFunctionConnection);
+        request.Content = new StringContent(reqeustBody);
+        await client.SendAsync(request);
     }
 }

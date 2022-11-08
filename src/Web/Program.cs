@@ -178,7 +178,7 @@ app.UseEndpoints(endpoints =>
     endpoints.MapRazorPages();
     endpoints.MapHealthChecks("home_page_health_check", new HealthCheckOptions { Predicate = check => check.Tags.Contains("homePageHealthCheck") });
     endpoints.MapHealthChecks("api_health_check", new HealthCheckOptions { Predicate = check => check.Tags.Contains("apiHealthCheck") });
-    //endpoints.MapBlazorHub("/admin");
+    endpoints.MapBlazorHub("/admin");
     endpoints.MapFallbackToFile("index.html");
 });
 

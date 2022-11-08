@@ -28,7 +28,7 @@ public class CreateCatalogItemEndpoint : IEndpoint<IResult, CreateCatalogItemReq
     public void AddRoute(IEndpointRouteBuilder app)
     {
         app.MapPost("api/catalog-items",
-            [Authorize(Roles = BlazorShared.Authorization.Constants.Roles.ADMINISTRATORS, AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)] async
+            [AllowAnonymous] async
             (CreateCatalogItemRequest request, IRepository<CatalogItem> itemRepository) =>
             {
                 _itemRepository = itemRepository;

@@ -8,6 +8,9 @@ using Microsoft.Extensions.Logging;
 using Azure.Storage.Blobs;
 using System;
 using Microsoft.Azure.Cosmos;
+using Newtonsoft.Json;
+using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
+using MessageBus;
 
 namespace Services
 {
@@ -15,25 +18,33 @@ namespace Services
     {
         [FunctionName("OrderItemReserver")]
         public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req,
-            ILogger log)
+           [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req,
+           ILogger log)
         {
             try
-            {
-                string Connection = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
+            { 
+                var messageReceiver = new MessageReceiver();
+                await messageReceiver.ReceiveMessageAsync();
+
+                string connection = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
                 string containerName = Environment.GetEnvironmentVariable("ContainerName");
 
-                string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-                var path = @"C:\Service\order.json";
-                File.WriteAllText(path, requestBody);
-                Stream myBlob = File.OpenRead(path);
+                using (var stream = new MemoryStream())
+                {
+                    string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+                    var order = JsonConvert.DeserializeObject<Order>(requestBody);
 
-                //myBlob = file.OpenReadStream();
-                var blobClient = new BlobContainerClient(Connection, containerName);
-                var blob = blobClient.GetBlobClient(@"order.json");
-                //await blob.UploadAsync(myBlob);
-                SaveToCosmos();
-                return new OkObjectResult("file uploaded successfylly");
+                    StreamWriter writer = new StreamWriter(stream);
+                    writer.Write(requestBody);
+                    writer.Flush();
+                    stream.Position = 0;
+
+                    var blobClient = new BlobContainerClient(connection, containerName);
+                    var blob = blobClient.GetBlobClient($"Order-{order.Id}");
+                    await blob.UploadAsync(stream);
+                    await SaveToCosmosDb(requestBody, log);
+                    return new OkObjectResult("File uploaded successfully");
+                }
             }
             catch (Exception ex)
             {
@@ -43,36 +54,25 @@ namespace Services
 
         }
 
-        private static void SaveToCosmos()
+        private static async Task SaveToCosmosDb(string requestBody, ILogger log)
         {
-            var client = InitializeCosmosDbClient();
-            var database = client.GetDatabase("EshopOrders");
-            var container = client.GetContainer("EshopOrders", "reserved-orders");
-            var order = new Order()
+            try
             {
-                Id = 2,
-                Name = "test order",
-            };
+                var cosmosUri = Environment.GetEnvironmentVariable("CosmosDbUri");
+                var connection = Environment.GetEnvironmentVariable("CosmosDbConnection");
+                using CosmosClient client = new(connectionString: connection!);
+                var database = client.GetDatabase("orders");
+                var container = client.GetContainer("orders", "processed-orders");
 
-            var response = container.CreateItemAsync<Order>(order);
+                var order = JsonConvert.DeserializeObject<Order>(requestBody);
+                var response = await container.CreateItemAsync(order);
+            }
+            catch (Exception ex)
+            {
+                log.LogInformation(ex.Message);
+                throw;
+            }
+            
         }
-
-        private static CosmosClient InitializeCosmosDbClient()
-        {
-            var cosmosUri = Environment.GetEnvironmentVariable("CosmosDbUri");
-            var key = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
-            var connection = Environment.GetEnvironmentVariable("CosmosDbConnection");
-
-            //using CosmosClient client = new(accountEndpoint: cosmosUri!, authKeyOrResourceToken: key!);
-            using CosmosClient client = new(connectionString: connection!);
-            return client;
-        }
-    }
-
-    public class Order
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public string Date { get; set; }
     }
 }

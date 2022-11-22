@@ -1,13 +1,17 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
+using Azure.Messaging.ServiceBus;
+using MessageBus;
 using Microsoft.eShopWeb.ApplicationCore.Entities;
 using Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Interfaces;
 using Microsoft.eShopWeb.ApplicationCore.Specifications;
+using Newtonsoft.Json;
 
 namespace Microsoft.eShopWeb.ApplicationCore.Services;
 
@@ -50,19 +54,12 @@ public class OrderService : IOrderService
 
         var order = new Order(basket.BuyerId, shippingAddress, items);
 
-        await _orderRepository.AddAsync(order);
-        await ReserveOrder(order);
-    }
+        var result = await _orderRepository.AddAsync(order);
+        
+        var messageSender = new MessageSender();
+        var messageReceiver = new MessageReceiver();
 
-    private async Task ReserveOrder(Order order)
-    {
-        var reqeustBody = JsonSerializer.Serialize(order);
-        var client = new HttpClient();
-
-        var reserverFunctionConnection = "https://orderitemreserver.azurewebsites.net";
-
-        var request = new HttpRequestMessage(HttpMethod.Post, reserverFunctionConnection);
-        request.Content = new StringContent(reqeustBody);
-        await client.SendAsync(request);
+        var messageBody = JsonConvert.SerializeObject(result);
+        await messageSender.SendMessageAsync(messageBody);
     }
 }

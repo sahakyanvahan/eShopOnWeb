@@ -4,9 +4,14 @@
     <AzureFunctionsVersion>v4</AzureFunctionsVersion>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.11.1" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.14.1" />
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.31.1" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="4.1.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ApplicationCore\ApplicationCore.csproj" />
+    <ProjectReference Include="..\MessageBus\MessageBus.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">

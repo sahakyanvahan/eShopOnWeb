@@ -1,7 +1,7 @@
 ﻿using Azure.Messaging.ServiceBus;
 
 namespace MessageBus;
-public class MessageReceiver
+public class MessageReceiver : IMessageReceiver
 {
     const string ServiceBusConnectionString = "Endpoint=sb://sb-exam-eastus-01.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=QdaI054hZLBRI0mixTezONzwks5CqUL/5jtnuBPn5y8=";
     const string QueueName = "orders";

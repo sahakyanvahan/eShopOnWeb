@@ -22,7 +22,7 @@ namespace Services
            ILogger log)
         {
             try
-            { 
+            {
                 var messageReceiver = new MessageReceiver();
                 await messageReceiver.ReceiveMessageAsync();
 
@@ -51,7 +51,6 @@ namespace Services
                 log.LogInformation(ex.Message);
                 throw;
             }
-
         }
 
         private static async Task SaveToCosmosDb(string requestBody, ILogger log)
